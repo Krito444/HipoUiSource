@@ -1,7 +1,13 @@
-# HipoControls Base
+# HipoControls Base — Potassium
 
-Ce dépôt conserve une seule source de référence pour la bibliothèque : [`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua).
+[`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua) est le script client autonome de la bibliothèque.
 
-Le fichier contient la bibliothèque et le menu de base. Pour personnaliser l’interface, ajoute tes onglets, sections et contrôles dans le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI`, vers la fin du fichier.
+## Lancer dans Potassium
 
-Consulte [Hipo Docs.md](Hipo%20Docs.md) pour les exemples d’utilisation et les contrôles disponibles.
+1. Attache Potassium au client Roblox déjà dans une partie.
+2. Ouvre `HipoControlsBase.lua` dans l’éditeur Potassium, ou colle le contenu complet du fichier dans un onglet.
+3. Clique sur **Execute**. Le script crée l’interface directement dans `PlayerGui` et remplace proprement une ancienne instance si tu le relances.
+
+Il n’y a aucun `LocalScript` ou `ModuleScript` à créer dans Roblox Studio. Pour personnaliser l’interface, modifie le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI` vers la fin du fichier.
+
+Voir [Hipo Docs.md](Hipo%20Docs.md) pour les exemples de contrôles.

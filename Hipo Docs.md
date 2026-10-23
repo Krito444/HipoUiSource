@@ -1,10 +1,16 @@
-# HipoControls Base — guide
+# HipoControls Base — guide Potassium
 
-## Source de référence
+## Source et lancement
 
-La bibliothèque et son menu de base sont réunis dans [`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua). C’est le seul fichier source à modifier pour personnaliser l’interface.
+La source unique est [`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua). C’est un script client autonome destiné à l’éditeur Potassium, pas un `LocalScript` ou `ModuleScript` Roblox Studio.
 
-Vers la fin du fichier, repère le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI`. Ajoute ton menu à cet endroit, après la définition des fonctions de la bibliothèque.
+1. Attache Potassium au client Roblox déjà dans une partie.
+2. Ouvre `HipoControlsBase.lua` dans l’éditeur, ou colle tout son contenu dans un onglet.
+3. Clique sur **Execute**.
+
+Le script vérifie que le joueur local et `PlayerGui` sont disponibles. S’il est relancé, il ferme l’ancienne interface avant d’en créer une nouvelle.
+
+Pour personnaliser le menu, modifie le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI`, vers la fin du fichier. Garde les fonctions de la bibliothèque au-dessus de ce bloc.
 
 ## Organisation du menu
 
@@ -97,7 +103,7 @@ options:Keybind({
 })
 ~~~
 
-### Couleurs
+### Sélecteurs de couleur
 
 ~~~lua
 options:ColorPicker({

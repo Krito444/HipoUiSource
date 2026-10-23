@@ -1,11 +1,23 @@
--- HipoControls standalone base menu.
--- Add your own sidebar tabs, top tabs, sections, and controls in the marked area below.
+-- HipoControls Base — script client autonome pour Potassium.
+-- Dans Potassium : attache le client, ouvre ce fichier dans l’éditeur et clique sur Execute.
+-- Ce fichier ne demande aucun LocalScript ni ModuleScript Roblox Studio.
+-- Personnalise le menu dans le bloc indiqué vers la fin du fichier.
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then
+    error("[HipoControls] Aucun joueur local. Attache Potassium à un client Roblox avant l’exécution.", 0)
+end
+local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+if not playerGui then
+    playerGui = LocalPlayer:WaitForChild("PlayerGui", 15)
+end
+if not playerGui then
+    error("[HipoControls] PlayerGui introuvable. Rejoins une partie puis relance le script.", 0)
+end
 local sessionConnections = {}
 local sessionThreads = {}
 local sessionStopped = false
@@ -126,7 +138,6 @@ local function createSliderSmoother(renderAlpha, initialAlpha, isAlive)
     return setTarget
 end
 
-local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 for _, child in ipairs(playerGui:GetChildren()) do
     if child.Name == "HipoControlsBaseGui" then
         local shutdown = child:FindFirstChild("HipoControlsSessionShutdown")
@@ -146,7 +157,7 @@ local Players = game:GetService("Players")
 local GuiService = game:GetService("GuiService")
 local LucideIcons = (function()	
 
--- Lucide Icons for Roblox Studio: https://lucide.dev
+-- Lucide Icons used by HipoControls: https://lucide.dev
 -- Sprite atlases generated from the official lucide-icons/lucide/icons SVG set (2026-10-17).
 -- ISC License
 --
@@ -2547,7 +2558,7 @@ end
 local WindowMethods = {}
 WindowMethods.__index = WindowMethods
 
--- Creates a Studio-safe controls window inside an existing GuiObject.
+-- Creates a controls window inside an existing GuiObject.
 function ControlsOverview.new(parent, options)
     assert(typeof(parent) == "Instance", "ControlsOverview.new expects a parent GuiObject")
     options = type(options) == "table" and options or {}
@@ -5989,7 +6000,7 @@ sessionShutdown.OnInvoke = shutdownCurrentSession
 -- local itemOptions = items:Section("Options", "package")
 -- itemOptions:Dropdown({Text = "Trier par", Options = {"Nom", "Rareté"}})
 
--- API utilisable après le chargement du script Raw.
+-- API disponible lorsque le script est chargé dans Potassium ou par un chargeur.
 local HipoControls = {}
 
 function HipoControls:AddSidebarTab(name, iconName)
@@ -6007,5 +6018,6 @@ end
 
 applyTheme("Dark")
 setUIVisible(true)
+print("[HipoControls] Interface lancée dans Potassium.")
 
 return HipoControls
