@@ -2573,6 +2573,86 @@ end
 local WindowMethods = {}
 WindowMethods.__index = WindowMethods
 
+local function createSectionColumns(parent, singleColumnBelow)
+    local columnsFrame = create("Frame", parent, {
+        Name = "SectionColumns",
+        LayoutOrder = 1,
+        Size = UDim2.new(1, 0, 0, 0),
+        BackgroundTransparency = 1,
+    })
+    local columns = {}
+
+    for index, name in ipairs({"LeftColumn", "RightColumn"}) do
+        local column = create("Frame", columnsFrame, {
+            Name = name,
+            Position = index == 1 and UDim2.fromOffset(0, 0) or UDim2.new(0.5, 4, 0, 0),
+            Size = UDim2.new(0.5, -4, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+        })
+        local columnLayout = create("UIListLayout", column, {
+            Padding = UDim.new(0, 8),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+        })
+        columns[index] = {
+            Frame = column,
+            Layout = columnLayout,
+            Count = 0,
+        }
+    end
+
+    local sectionLayout = {
+        Frame = columnsFrame,
+        Columns = columns,
+        Items = {},
+        SingleColumnBelow = tonumber(singleColumnBelow) or 680,
+    }
+
+    local function resizeColumnsFrame()
+        local contentHeight = math.max(
+            columns[1].Layout.AbsoluteContentSize.Y,
+            columns[2].Layout.AbsoluteContentSize.Y
+        )
+        columnsFrame.Size = UDim2.new(1, 0, 0, contentHeight)
+    end
+
+    function sectionLayout:Reflow()
+        local left, right = self.Columns[1], self.Columns[2]
+        local singleColumn = parent.AbsoluteSize.X < self.SingleColumnBelow
+        right.Frame.Visible = not singleColumn
+        left.Frame.Position = UDim2.fromOffset(0, 0)
+        left.Frame.Size = singleColumn and UDim2.new(1, 0, 0, 0) or UDim2.new(0.5, -4, 0, 0)
+        right.Frame.Position = UDim2.new(0.5, 4, 0, 0)
+        right.Frame.Size = UDim2.new(0.5, -4, 0, 0)
+        left.Count, right.Count = 0, 0
+
+        for index, item in ipairs(self.Items) do
+            local columnIndex = singleColumn and 1 or ((index - 1) % 2 + 1)
+            local column = self.Columns[columnIndex]
+            column.Count += 1
+            item.Frame.Parent = column.Frame
+            item.Frame.LayoutOrder = column.Count
+        end
+
+        resizeColumnsFrame()
+    end
+
+    function sectionLayout:Add(section)
+        self.Items[#self.Items + 1] = {Frame = section.Frame}
+        self:Reflow()
+    end
+
+    for _, column in ipairs(columns) do
+        column.Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(resizeColumnsFrame)
+    end
+    parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+        sectionLayout:Reflow()
+    end)
+    sectionLayout:Reflow()
+
+    return sectionLayout
+end
+
 -- Creates a controls window inside an existing GuiObject.
 function ControlLibrary.new(parent, options)
     assert(typeof(parent) == "Instance", "ControlLibrary.new expects a parent GuiObject")
@@ -2591,7 +2671,14 @@ function ControlLibrary.new(parent, options)
         Active = true,
     })
     create("UIListLayout", root, {Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder})
-    local window = setmetatable({Frame = root, Content = root, Sections = {}, Title = options.Title}, WindowMethods)
+    local sectionLayout = createSectionColumns(root, options.SingleColumnBelow)
+    local window = setmetatable({
+        Frame = root,
+        Content = root,
+        Sections = {},
+        Title = options.Title,
+        _SectionLayout = sectionLayout,
+    }, WindowMethods)
     if type(options.Title) == "string" and options.Title ~= "" then
         create("TextLabel", root, {
             Name = "WindowTitle",
@@ -2613,9 +2700,10 @@ function WindowMethods:Section(name, iconName, options)
     local sectionOptions = {}
     for key, value in pairs(options or {}) do sectionOptions[key] = value end
     if iconName and sectionOptions.Icon == nil then sectionOptions.Icon = iconName end
-    local section = ControlLibrary:CreateSection(self.Content, name, sectionOptions)
+    local section = ControlLibrary:CreateSection(self._SectionLayout.Frame, name, sectionOptions)
     section.Window = self
     section.Icon = sectionOptions.Icon
+    self._SectionLayout:Add(section)
     table.insert(self.Sections, section)
     return section
 end

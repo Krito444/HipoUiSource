@@ -36,7 +36,7 @@ local UI_CONFIG = {
 
 ## Organisation du menu
 
-Un onglet latéral contient des pages. Chaque page contient des sections, puis des contrôles. Appelle `AddPage` sur l’instance `ui` :
+Un onglet latéral contient des pages. Chaque page contient des sections, puis des contrôles. Les sections d’une page se répartissent en deux colonnes; elles s’ajoutent alternativement à gauche et à droite. Sur une fenêtre étroite, elles repassent en une seule colonne. Appelle `AddPage` sur l’instance `ui` :
 
 ~~~lua
 local objects = ui:AddPage("Inventaire", "package", "Objets")
