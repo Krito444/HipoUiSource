@@ -5732,7 +5732,7 @@ updateTabs = function()
 	for _, entry in ipairs(tabs) do
 		local visible = entry.Owner == activeSidebarItem
 		local selected = visible and entry.Owner.ActiveTab == entry
-		local textColor = selected and (entry.hovered and COLORS.limeHover or COLORS.lime)
+		local textColor = selected and COLORS.text
 			or (entry.hovered and COLORS.text or COLORS.muted)
 		entry.button.Visible = visible
 		animateTo(entry.button, {TextColor3 = textColor})
