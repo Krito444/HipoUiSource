@@ -3482,6 +3482,7 @@ function SectionMethods:Dropdown(config)
         if not contains(dropdown) and not contains(menu) then setOpen(false) end
     end)
     local function render() dropdown.Text = tostring(options[index]) end
+    render()
     setOpen(false)
     local handle = {Instance = dropdown, Menu = menu, Row = row}
     function handle:GetValue() return options[index] end
