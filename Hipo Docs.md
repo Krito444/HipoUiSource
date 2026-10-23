@@ -1,32 +1,72 @@
-# HipoControls Base — guide Potassium
+# HipoControls — guide Potassium
 
 ## Source et lancement
 
-La source unique est [`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua). C’est un script client autonome destiné à l’éditeur Potassium, pas un `LocalScript` ou `ModuleScript` Roblox Studio.
+La source unique est [`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua). Elle retourne une bibliothèque; elle ne crée pas l’interface avant l’appel à `HipoControls.new(options)`.
 
-1. Attache Potassium au client Roblox déjà dans une partie.
-2. Ouvre `HipoControlsBase.lua` dans l’éditeur, ou colle tout son contenu dans un onglet.
-3. Clique sur **Execute**.
+Dans ton script client, charge la source puis crée l’interface :
 
-Le script vérifie que le joueur local et `PlayerGui` sont disponibles. S’il est relancé, il ferme l’ancienne interface avant d’en créer une nouvelle.
+~~~lua
+local HipoControls = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/Krito444/HipoUiSource/refs/heads/main/HipoControlsBase/HipoControlsBase.lua"
+))()
 
-Pour personnaliser le menu, modifie le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI`, vers la fin du fichier. Garde les fonctions de la bibliothèque au-dessus de ce bloc.
+local UI_CONFIG = {
+    Title = "Mon interface",
+    Keybind = Enum.KeyCode.RightControl,
+}
+
+local ui = HipoControls.new(UI_CONFIG)
+~~~
+
+`ui` est l’instance de l’interface. Si une autre interface HipoControls est déjà ouverte, elle est fermée avant la création de la nouvelle.
+
+## Configurer le titre et le raccourci
+
+`UI_CONFIG` appartient au script appelant. Change `Title` et `Keybind` à cet endroit; le code de la bibliothèque reste identique.
+
+~~~lua
+local UI_CONFIG = {
+    Title = "Bloxburg Helper",
+    Keybind = Enum.KeyCode.RightControl,
+}
+~~~
+
+`Keybind` définit le raccourci initial pour afficher ou masquer l’interface. Il reste modifiable pendant la session dans **Settings > General > Hide UI**. La taille de la fenêtre reste fixe.
 
 ## Organisation du menu
 
-Un onglet latéral contient des onglets horizontaux. Chaque onglet horizontal contient des sections, puis des contrôles :
+Un onglet latéral contient des pages. Chaque page contient des sections, puis des contrôles. Appelle `AddPage` sur l’instance `ui` :
 
 ~~~lua
-local inventory = addSidebarTab("Inventaire", "package")
-local objects = inventory:Tab("Objets")
+local objects = ui:AddPage("Inventaire", "package", "Objets")
 local options = objects:Section("Options", "package")
 
 options:Toggle({
     Text = "Afficher les objets",
+    Description = "Active l’affichage des objets de l’inventaire.",
     Default = true,
     Callback = function(enabled)
-        print(enabled)
+        print("Afficher les objets :", enabled)
     end,
+})
+~~~
+
+L’image ci-dessous juxtapose le code et le rendu dans l’interface.
+
+![Exemple de code et rendu du toggle dans Hipo Controls](images/ajout-toggle-code-rendu.png)
+
+Chaque ligne prépare une partie du menu : `AddPage` crée le bouton latéral et la page, `:Section` regroupe les contrôles et `:Toggle` ajoute l’interrupteur. `Default` définit son état au démarrage. La fonction `Callback` reçoit `true` quand le toggle est activé et `false` quand il est désactivé.
+À l’exécution, clique sur l’icône **Inventaire** dans la barre latérale pour afficher la page.
+
+Pour ajouter plusieurs pages au même onglet latéral, réutilise le nom et l’icône sur la même instance `ui` :
+
+~~~lua
+local settings = ui:AddPage("Inventaire", "package", "Réglages")
+local settingsSection = settings:Section("Affichage", "eye")
+settingsSection:Dropdown({
+    Text = "Trier par",
+    Options = {"Nom", "Rareté"},
 })
 ~~~
 
@@ -139,4 +179,4 @@ options:Palette({
 | `Callback` | Fonction appelée lors d’un changement ou d’une action. |
 | `Icon` | Icône facultative du contrôle. |
 
-Les contrôles avec une valeur renvoient un objet de contrôle. Garde-le dans une variable pour consulter ou modifier sa valeur avec `:Get()` et `:Set(...)`.
+Les contrôles avec une valeur renvoient un objet de contrôle. Garde-le dans une variable pour consulter ou modifier sa valeur avec `:Get()` et `:Set(...)`. Pour fermer l’interface et nettoyer ses connexions, appelle `ui:Destroy()`.

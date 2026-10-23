@@ -1,7 +1,20 @@
--- HipoControls Base — script client autonome pour Potassium.
--- Dans Potassium : attache le client, ouvre ce fichier dans l’éditeur et clique sur Execute.
--- Ce fichier ne demande aucun LocalScript ni ModuleScript Roblox Studio.
--- Personnalise le menu dans le bloc indiqué vers la fin du fichier.
+-- HipoControls : bibliothèque d’interface client pour Potassium.
+-- Charge-la, puis appelle HipoControls.new(options) depuis ton script.
+-- Le script appelant fournit le titre, le raccourci et ses propres contrôles.
+
+local function createInterface(options)
+    options = options or {}
+    assert(type(options) == "table", "[HipoControls] new attend une table d’options")
+
+    local menuTitle = options.Title
+    if menuTitle == nil then menuTitle = "HIPO CONTROLS" end
+    assert(type(menuTitle) == "string" and menuTitle ~= "", "[HipoControls] Title doit être un texte non vide")
+
+    local initialHideKey = options.Keybind
+    if initialHideKey == nil then initialHideKey = Enum.KeyCode.RightControl end
+    assert(typeof(initialHideKey) == "EnumItem" and initialHideKey.EnumType == Enum.KeyCode, "[HipoControls] Keybind doit être un Enum.KeyCode")
+
+-- ===== Services Roblox et validation du joueur =====
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -148,7 +161,8 @@ for _, child in ipairs(playerGui:GetChildren()) do
     end
 end
 
-local ControlsOverview = (function()
+-- ===== Composants communs et icônes =====
+local ControlLibrary = (function()
 -- Reusable controls and interface helpers for HipoControls.
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -2177,7 +2191,8 @@ end
 return LucideIcons
 end)()
 
-local ControlsOverview = {
+-- ===== Contrôles réutilisables et paramètres par défaut =====
+local ControlLibrary = {
     Title = "Controls overview",
     Description = "Examples for the available control types.",
     Icons = LucideIcons,
@@ -2202,22 +2217,22 @@ local ControlsOverview = {
     },
     SettingsExamples = {
         {Type = "Dropdown", Label = "Theme", Description = "Choose a theme preset.", Options = {"Dark", "Light", "Ocean", "Violet", "Sunset", "Sky"}, Value = "Dark", VisibleOptions = 3, ApplyTheme = true, Icon = "palette"},
-        {Type = "Keybind", Label = "Hide UI", Description = "Press the key to hide or show the interface.", Value = Enum.KeyCode.RightControl, Icon = "keyboard"},
+        {Type = "Keybind", Label = "Hide UI", Description = "Press the key to hide or show the interface.", Value = initialHideKey, Icon = "keyboard"},
         {Type = "ColorPicker", Label = "Accent Color", Description = "Choose the color used by the interface.", Value = Color3.fromRGB(190, 220, 35), Colors = {Color3.fromRGB(190, 220, 35), Color3.fromRGB(70, 170, 255), Color3.fromRGB(240, 90, 110), Color3.fromRGB(180, 105, 255)}, Icon = "pipette"},
     },
 }
 
 local themeRefreshers = {}
 
-function ControlsOverview.SetThemePalette(palette, paletteRoles)
+function ControlLibrary.SetThemePalette(palette, paletteRoles)
     assert(type(palette) == "table", "SetThemePalette expects a palette table")
     paletteRoles = paletteRoles or {}
 
-    for themeRole in pairs(ControlsOverview.Theme) do
+    for themeRole in pairs(ControlLibrary.Theme) do
         local paletteRole = paletteRoles[themeRole] or themeRole
         local color = palette[paletteRole]
         if typeof(color) == "Color3" then
-            ControlsOverview.Theme[themeRole] = color
+            ControlLibrary.Theme[themeRole] = color
         end
     end
 
@@ -2247,7 +2262,7 @@ local glassSurfaces = {}
 local tween
 
 local function applyGlassSurface(frame, radius)
-    local theme = ControlsOverview.Theme
+    local theme = ControlLibrary.Theme
     frame:SetAttribute("HipoGlassSurface", true)
     frame.BackgroundTransparency = glassEnabled and 0.02 or 0
     round(frame, radius or 12)
@@ -2274,7 +2289,7 @@ local function applyGlassSurface(frame, radius)
     table.insert(glassSurfaces, {Frame = frame, Gradient = gradient, Outline = outline, Theme = theme})
 end
 
-function ControlsOverview.SetGlassEnabled(enabled)
+function ControlLibrary.SetGlassEnabled(enabled)
     glassEnabled = enabled == true
     for index = #glassSurfaces, 1, -1 do
         local surface = glassSurfaces[index]
@@ -2314,7 +2329,7 @@ local function showControlNotification(parent, title, message, theme, accentColo
 
     title = tostring(title or "Notification")
     message = tostring(message or "")
-    theme = theme or ControlsOverview.Theme
+    theme = theme or ControlLibrary.Theme
 
     if not screenGui then
         pcall(function()
@@ -2439,7 +2454,7 @@ local function showControlNotification(parent, title, message, theme, accentColo
 end
 
 local function makeButton(parent, text, width, bindHover)
-    local theme = ControlsOverview.Theme
+    local theme = ControlLibrary.Theme
     local button = create("TextButton", parent, {
         AnchorPoint = Vector2.new(1, 0.5),
         Position = UDim2.new(1, -12, 0.5, 0),
@@ -2485,7 +2500,7 @@ local function exposeSectionHandle(handle, config)
 end
 
 -- Creates a reusable section. Example:
--- local window = ControlsOverview.new(parent, {Title = "My controls"})
+-- local window = ControlLibrary.new(parent, {Title = "My controls"})
 -- local section = window:Section("General", "settings")
 -- section:Toggle({Text = "Enabled", Icon = "toggle-right", Default = false, Callback = function(value) print(value) end})
 -- section:Button({Text = "Rejoin server", Icon = "log-in", Callback = function() print("Clicked") end})
@@ -2497,12 +2512,12 @@ end
 -- Hover and Click accept Rotate, Scale, Icon, Text and Hold; Rotate, Scale and Icon need ButtonIcon.
 -- HoverColor and HoverFill customize outline only. Icon is the row icon; ButtonIcon sits inside the button.
 -- Button handles expose SetText, Show, Hide, SetVisible(bool) and Destroy. Keep one primary action per section.
-function ControlsOverview:CreateSection(parent, title, options)
+function ControlLibrary:CreateSection(parent, title, options)
     assert(typeof(parent) == "Instance", "CreateSection expects a parent Instance")
     options = type(options) == "table" and options or {}
     local iconName = options.Icon
     local hasIcon = type(iconName) == "string" and LucideIcons.Has(iconName)
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local card = create("Frame", parent, {
         Name = (title or "Section") .. "Section",
         Size = UDim2.new(1, -12, 0, 0),
@@ -2551,7 +2566,7 @@ function ControlsOverview:CreateSection(parent, title, options)
     return setmetatable({Frame = card, Content = content, Theme = theme, Icon = iconName, _layoutOrder = 0}, SectionMethods)
 end
 
-function ControlsOverview:Section(parent, title, options)
+function ControlLibrary:Section(parent, title, options)
     return self:CreateSection(parent, title, options)
 end
 
@@ -2559,10 +2574,10 @@ local WindowMethods = {}
 WindowMethods.__index = WindowMethods
 
 -- Creates a controls window inside an existing GuiObject.
-function ControlsOverview.new(parent, options)
-    assert(typeof(parent) == "Instance", "ControlsOverview.new expects a parent GuiObject")
+function ControlLibrary.new(parent, options)
+    assert(typeof(parent) == "Instance", "ControlLibrary.new expects a parent GuiObject")
     options = type(options) == "table" and options or {}
-    local theme = ControlsOverview.Theme
+    local theme = ControlLibrary.Theme
     local root = create("ScrollingFrame", parent, {
         Name = options.Name or "ControlsLibrary",
         Size = UDim2.fromScale(1, 1),
@@ -2598,7 +2613,7 @@ function WindowMethods:Section(name, iconName, options)
     local sectionOptions = {}
     for key, value in pairs(options or {}) do sectionOptions[key] = value end
     if iconName and sectionOptions.Icon == nil then sectionOptions.Icon = iconName end
-    local section = ControlsOverview:CreateSection(self.Content, name, sectionOptions)
+    local section = ControlLibrary:CreateSection(self.Content, name, sectionOptions)
     section.Window = self
     section.Icon = sectionOptions.Icon
     table.insert(self.Sections, section)
@@ -2613,7 +2628,7 @@ end
 function SectionMethods:Toggle(config)
     config = config or {}
     assert(type(config) == "table", "Section:Toggle expects a config table")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     self._layoutOrder = self._layoutOrder + 1
 
     local hasDescription = type(config.Description) == "string" and config.Description ~= ""
@@ -2805,7 +2820,7 @@ function SectionMethods:Button(config)
     config = config or {}
     assert(type(config) == "table", "Section:Button expects a config table")
     assert(type(config.Text) == "string", "Section:Button requires Text")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local row = createSectionRow(self, config.Text or "Button", 132, "Button", config.Description, config.Icon)
     local button = makeSectionButton(row, config.ButtonText or "Run", 132, theme, false)
     local style = config.Style
@@ -3090,7 +3105,7 @@ end
 function SectionMethods:Slider(config)
     config = config or {}
     assert(type(config) == "table", "Section:Slider expects a config table")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local row = createSectionRow(self, config.Text or "Slider", 184, "Slider", config.Description, config.Icon)
     local control = create("Frame", row, {
         AnchorPoint = Vector2.new(1, 0.5),
@@ -3219,7 +3234,7 @@ end
 function SectionMethods:Input(config)
     config = config or {}
     assert(type(config) == "table", "Section:Input expects a config table")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local row = createSectionRow(self, config.Text or "Input", 174, "Input", config.Description, config.Icon)
     local initial = controlDefault(config, "")
     local value = initial ~= nil and tostring(initial) or ""
@@ -3263,7 +3278,7 @@ local activeSectionDropdownCloser
 function SectionMethods:Dropdown(config)
     config = config or {}
     assert(type(config) == "table", "Section:Dropdown expects a config table")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local options = config.Options or {"Option 1"}
     if #options == 0 then options = {"Option 1"} end
     local index = table.find(options, controlDefault(config, options[1])) or 1
@@ -3503,7 +3518,7 @@ SectionMethods.DropDown = SectionMethods.Dropdown
 function SectionMethods:Keybind(config)
     config = config or {}
     assert(type(config) == "table", "Section:Keybind expects a config table")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local row = createSectionRow(self, config.Text or "Keybind", 110, "Keybind", config.Description, config.Icon)
     local key = controlDefault(config, Enum.KeyCode.F)
     if typeof(key) ~= "EnumItem" then
@@ -4088,7 +4103,7 @@ end
 function SectionMethods:ColorPicker(config)
     config = config or {}
     assert(type(config) == "table", "Section:ColorPicker expects a config table")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local colors = config.Colors or defaultColors(theme)
     if #colors == 0 then colors = defaultColors(theme) end
     local selectedColor = typeof(config.Value) == "Color3" and config.Value or colors[1]
@@ -4142,7 +4157,7 @@ end
 function SectionMethods:Palette(config)
     config = config or {}
     assert(type(config) == "table", "Section:Palette expects a config table")
-    local theme = self.Theme or ControlsOverview.Theme
+    local theme = self.Theme or ControlLibrary.Theme
     local colors = config.Colors or defaultColors(theme)
     if #colors == 0 then colors = defaultColors(theme) end
     local selectedColor = typeof(config.Value) == "Color3" and config.Value or colors[1]
@@ -4210,11 +4225,11 @@ function SectionMethods:Palette(config)
     return exposeSectionHandle(handle, config)
 end
 
-function ControlsOverview.Build(parent, callbacks)
+function ControlLibrary.BuildSettingsPage(parent, callbacks)
     callbacks = callbacks or {}
-    assert(type(callbacks) == "table", "ControlsOverview.Build callbacks must be a table")
-    local theme = ControlsOverview.Theme
-    local examples = callbacks.Examples or ControlsOverview.Examples
+    assert(type(callbacks) == "table", "ControlLibrary.BuildSettingsPage callbacks must be a table")
+    local theme = ControlLibrary.Theme
+    local examples = callbacks.Examples or ControlLibrary.Examples
     local page = create("ScrollingFrame", parent, {
         Name = "ControlsOverviewPage",
         Size = UDim2.fromScale(1, 1),
@@ -4252,7 +4267,7 @@ function ControlsOverview.Build(parent, callbacks)
         Position = UDim2.fromOffset(10, 2),
         Size = UDim2.new(1, -20, 0, 20),
         BackgroundTransparency = 1,
-        Text = callbacks.Title or ControlsOverview.Title,
+        Text = callbacks.Title or ControlLibrary.Title,
         TextColor3 = theme.text,
         Font = Enum.Font.GothamSemibold,
         TextSize = 16,
@@ -4262,7 +4277,7 @@ function ControlsOverview.Build(parent, callbacks)
         Position = UDim2.fromOffset(10, 24),
         Size = UDim2.new(1, -20, 0, 17),
         BackgroundTransparency = 1,
-        Text = callbacks.Description or ControlsOverview.Description,
+        Text = callbacks.Description or ControlLibrary.Description,
         TextColor3 = theme.muted,
         Font = Enum.Font.Gotham,
         TextSize = 10,
@@ -4340,7 +4355,7 @@ function ControlsOverview.Build(parent, callbacks)
             resizeColumnsFrame()
         end
         function sectionLayout:CreateSection(title, options)
-            local section = ControlsOverview:CreateSection(self.Frame, title, options)
+            local section = ControlLibrary:CreateSection(self.Frame, title, options)
             self.Items[#self.Items + 1] = {Frame = section.Frame, SizeYOffset = 0}
             self:Reflow()
             return section
@@ -4797,10 +4812,10 @@ function ControlsOverview.Build(parent, callbacks)
     return page, sectionLayout
 end
 
-return ControlsOverview
+return ControlLibrary
 
 end)()
-local LucideIcons = ControlsOverview.Icons
+local LucideIcons = ControlLibrary.Icons
 
 local COLORS = {
 	panel = Color3.fromRGB(19, 20, 21),
@@ -4850,6 +4865,7 @@ end
 
 local glassEnabled = false
 
+-- ===== Fenêtre principale et cycle de vie =====
 local gui = make("ScreenGui", playerGui, {
 	Name = "HipoControlsBaseGui",
 	IgnoreGuiInset = true,
@@ -4930,6 +4946,7 @@ local function setUIVisible(isVisible)
 	backgroundTween:Play()
 end
 
+-- ===== Thèmes et personnalisation visuelle =====
 local THEME_PALETTES = {
 	Dark = {
 		panel = Color3.fromRGB(19, 20, 21), rail = Color3.fromRGB(15, 16, 17),
@@ -5055,7 +5072,7 @@ local function applyTheme(themeName)
 	for role, color in pairs(COLORS) do
 		addColorRole(color, role)
 	end
-	for role, color in pairs(ControlsOverview.Theme) do
+	for role, color in pairs(ControlLibrary.Theme) do
 		addColorRole(color, overviewRoles[role] or role)
 	end
 	local function roleForColor(color)
@@ -5099,7 +5116,7 @@ local function applyTheme(themeName)
 	for role, color in pairs(palette) do
 		if COLORS[role] ~= nil then COLORS[role] = color end
 	end
-	ControlsOverview.SetThemePalette(palette, overviewRoles)
+	ControlLibrary.SetThemePalette(palette, overviewRoles)
 	activeThemeName = themeName
 	return true
 end
@@ -5226,7 +5243,7 @@ end
 local function setGlassEnabled(enabled)
 	glassEnabled = enabled == true
 	applyTheme(activeThemeName)
-	ControlsOverview.SetGlassEnabled(glassEnabled)
+	ControlLibrary.SetGlassEnabled(glassEnabled)
 	setGlobalGlassEnabled(glassEnabled)
 	animateTo(panel, {
 		BackgroundTransparency = glassEnabled and (uiTargetVisible and 0.02 or 0.2)
@@ -5599,7 +5616,7 @@ make("UIListLayout", topTabsStrip, {
 
 local title = make("TextLabel", top, {
 	Position = UDim2.fromOffset(12, 3), Size = UDim2.fromOffset(170, 34),
-	BackgroundTransparency = 1, Text = "HIPO CONTROLS",
+	BackgroundTransparency = 1, Text = menuTitle,
 	TextColor3 = COLORS.muted, Font = Enum.Font.GothamMedium, TextSize = 11,
 	TextXAlignment = Enum.TextXAlignment.Left,
 })
@@ -5628,19 +5645,20 @@ local function makeSectionPage(name, visible)
 	})
 end
 
+-- ===== Réglages intégrés et navigation =====
 local settingsSidebarItem = registerSidebarItem("Settings", "settings")
 sidebarTabNames[settingsSidebarItem.Name] = settingsSidebarItem
 activeSidebarItem = settingsSidebarItem
 
 local settingsSectionPage = makeSectionPage("SettingsSectionPage", true)
 sectionPages.Settings = settingsSectionPage
-local settingsPage, sectionLayout = ControlsOverview.Build(settingsSectionPage, {
+local settingsPage, sectionLayout = ControlLibrary.BuildSettingsPage(settingsSectionPage, {
 	Title = "Settings",
 	Description = "Theme, interface shortcut, and accent color.",
 	Examples = {},
 	ColumnCount = 2,
 })
-local settingsExamples = ControlsOverview.SettingsExamples
+local settingsExamples = ControlLibrary.SettingsExamples
 local appearanceSection = sectionLayout:CreateSection("Appearance")
 
 local themeExample = settingsExamples[1]
@@ -5858,7 +5876,7 @@ function SidebarGroupMethods:Tab(name)
 	local pageKey = nextSidebarPageKey()
 	local page = makeSectionPage(pageKey, false)
 	sectionPages[pageKey] = page
-	local controls = ControlsOverview.new(page, {
+	local controls = ControlLibrary.new(page, {
 		Name = pageKey .. "Controls",
 		Title = name,
 	})
@@ -5985,40 +6003,35 @@ end
 
 sessionShutdown.OnInvoke = shutdownCurrentSession
 
--- AJOUTER VOTRE MENU PERSONNALISÉ ICI.
--- Un onglet latéral contient une ou plusieurs Tabs horizontales.
--- Chaque Tab peut contenir des Sections, puis vos contrôles.
---
--- Exemple :
--- local combat = addSidebarTab("Combat", "swords")
--- local rage = combat:Tab("Rage")
--- local targeting = rage:Section("Targeting", "crosshair")
--- targeting:Toggle({Text = "Activer", Default = false})
--- targeting:Slider({Text = "Distance", Min = 0, Max = 100, Default = 25})
---
--- local inventory = addSidebarTab("Inventaire", "package")
--- local items = inventory:Tab("Objets")
--- local itemOptions = items:Section("Options", "package")
--- itemOptions:Dropdown({Text = "Trier par", Options = {"Nom", "Rareté"}})
+-- ===== API de l’interface =====
+local ui = {}
 
--- API disponible lorsque le script est chargé dans Potassium ou par un chargeur.
-local HipoControls = {}
-
-function HipoControls:AddSidebarTab(name, iconName)
-	return addSidebarTab(name, iconName)
+function ui:AddSidebarTab(name, iconName)
+    return addSidebarTab(name, iconName)
 end
 
--- Alias en appel pointé : HipoControls.addSidebarTab("Nom", "icon")
-HipoControls.addSidebarTab = function(name, iconName)
-	return addSidebarTab(name, iconName)
+-- Ajoute une page à un onglet latéral et retourne son constructeur de contrôles.
+function ui:AddPage(sidebarName, iconName, pageName)
+    local sidebar = self:AddSidebarTab(sidebarName, iconName)
+    return sidebar:Tab(pageName)
 end
 
-function HipoControls:Destroy()
-	shutdownCurrentSession()
+function ui:Destroy()
+    shutdownCurrentSession()
 end
 
 applyTheme("Dark")
 setUIVisible(true)
 print("[HipoControls] Interface lancée dans Potassium.")
+
+return ui
+end
+
+-- ===== API publique de la bibliothèque =====
+local HipoControls = {}
+
+function HipoControls.new(options)
+    return createInterface(options)
+end
 
 return HipoControls

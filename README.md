@@ -1,13 +1,20 @@
-# HipoControls Base — Potassium
+# HipoControls — Potassium
 
-[`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua) est le script client autonome de la bibliothèque.
+[`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua) retourne la bibliothèque. Elle crée une interface quand le script appelant exécute `HipoControls.new(options)`.
 
-## Lancer dans Potassium
+## Charger et créer une interface
 
-1. Attache Potassium au client Roblox déjà dans une partie.
-2. Ouvre `HipoControlsBase.lua` dans l’éditeur Potassium, ou colle le contenu complet du fichier dans un onglet.
-3. Clique sur **Execute**. Le script crée l’interface directement dans `PlayerGui` et remplace proprement une ancienne instance si tu le relances.
+```lua
+local HipoControls = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/Krito444/HipoUiSource/refs/heads/main/HipoControlsBase/HipoControlsBase.lua"
+))()
 
-Il n’y a aucun `LocalScript` ou `ModuleScript` à créer dans Roblox Studio. Pour personnaliser l’interface, modifie le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI` vers la fin du fichier.
+local ui = HipoControls.new({
+    Title = "Mon interface",
+    Keybind = Enum.KeyCode.RightControl,
+})
+```
+
+Le script appelant configure le titre et le raccourci, puis ajoute ses pages et contrôles via l’instance `ui`.
 
 Voir [Hipo Docs.md](Hipo%20Docs.md) pour les exemples de contrôles.
