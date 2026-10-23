@@ -6,7 +6,7 @@
 
 ```lua
 local HipoControls = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/Krito444/HipoUiSource/refs/heads/main/HipoControlsBase/HipoControlsBase.lua"
+    "https://raw.githubusercontent.com/Krito444/HipoUiSource/main/HipoControlsBase/HipoControlsBase.lua"
 ))()
 
 local ui = HipoControls.new({
