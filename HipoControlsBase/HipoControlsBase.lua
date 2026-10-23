@@ -2531,11 +2531,16 @@ function ControlLibrary:CreateSection(parent, title, options)
         SortOrder = Enum.SortOrder.LayoutOrder,
         HorizontalAlignment = Enum.HorizontalAlignment.Center,
     })
-    create("TextLabel", card, {
-        Name = "SectionTitle",
+    local header = create("Frame", card, {
+        Name = "SectionHeader",
         LayoutOrder = 0,
+        Size = UDim2.new(1, -16, 0, 36),
+        BackgroundTransparency = 1,
+    })
+    create("TextLabel", header, {
+        Name = "SectionTitle",
         Position = UDim2.fromOffset(hasIcon and 28 or 0, 0),
-        Size = UDim2.new(1, hasIcon and -52 or -24, 0, 36),
+        Size = UDim2.new(1, hasIcon and -28 or 0, 1, 0),
         BackgroundTransparency = 1,
         Text = title or "Section",
         TextColor3 = theme.text,
@@ -2545,9 +2550,9 @@ function ControlLibrary:CreateSection(parent, title, options)
         TextYAlignment = Enum.TextYAlignment.Center,
     })
     if hasIcon then
-        LucideIcons.Create(card, iconName, {
+        LucideIcons.Create(header, iconName, {
             Name = "SectionIcon",
-            Position = UDim2.fromOffset(10, 10),
+            Position = UDim2.fromOffset(2, 10),
             Size = UDim2.fromOffset(16, 16),
             Color = theme.lime,
         })
