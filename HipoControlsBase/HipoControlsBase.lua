@@ -5453,7 +5453,7 @@ end
 navContainer = make("ScrollingFrame", rail, {
 	Name = "SidebarTabs",
 	Position = UDim2.new(0, 0, 0, 60),
-	Size = UDim2.new(1, 0, 1, -68),
+	Size = UDim2.new(1, 0, 1, -112),
 	BackgroundTransparency = 1,
 	BorderSizePixel = 0,
 	CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -5470,17 +5470,34 @@ local activeIndicator = make("Frame", navContainer, {
 	Size = UDim2.fromOffset(3, 18),
 	BackgroundColor3 = COLORS.lime,
 	BorderSizePixel = 0,
+	Visible = false,
 	ZIndex = 2,
 })
 round(activeIndicator, 2)
 
+local settingsIndicator = make("Frame", rail, {
+	Name = "SettingsActiveIndicator",
+	Position = UDim2.new(0, 1, 1, -38),
+	Size = UDim2.fromOffset(3, 18),
+	BackgroundColor3 = COLORS.lime,
+	BorderSizePixel = 0,
+	Visible = true,
+	ZIndex = 2,
+})
+round(settingsIndicator, 2)
+
 local function registerSidebarItem(name, icon)
 	local index = #navItems + 1
-	local item = setmetatable({Name = name, Icon = icon, Tabs = {}, ActiveTab = nil}, SidebarGroupMethods)
+	local isPinnedSettings = name == "Settings"
+	local item = setmetatable({Name = name, Icon = icon, Tabs = {}, ActiveTab = nil, IsPinned = isPinnedSettings}, SidebarGroupMethods)
 	table.insert(navItems, item)
-	local button = make("TextButton", navContainer, {
+	local buttonPosition = isPinnedSettings
+		and UDim2.new(0.5, 0, 1, -12)
+		or UDim2.fromOffset(7, 4 + (index - 2) * 43)
+	local button = make("TextButton", isPinnedSettings and rail or navContainer, {
 		Name = "SidebarTabButton" .. tostring(index),
-		Position = UDim2.fromOffset(7, 4 + (index - 1) * 43),
+		AnchorPoint = isPinnedSettings and Vector2.new(0.5, 1) or Vector2.zero,
+		Position = buttonPosition,
 		Size = UDim2.fromOffset(34, 34),
 		BackgroundColor3 = index == selectedNavIndex and COLORS.limeDark or COLORS.rail,
 		BorderSizePixel = 0, Text = "",
@@ -5577,9 +5594,14 @@ local function registerSidebarItem(name, icon)
 	end)
 	button.Activated:Connect(function()
 		selectedNavIndex = index
-		animateTo(activeIndicator, {
-			Position = UDim2.new(0, 1, 0, 12 + (index - 1) * 43),
-		}, SELECTION_TWEEN)
+		activeIndicator.Visible = not item.IsPinned
+		settingsIndicator.Visible = item.IsPinned
+		if not item.IsPinned then
+			local contentPosition = navContentPositions[index]
+			animateTo(activeIndicator, {
+				Position = UDim2.new(0, 1, 0, contentPosition.Y.Offset + 8),
+			}, SELECTION_TWEEN)
+		end
 		for n = 1, #navItems do updateNavButton(n, true) end
 		if selectSidebarItem then selectSidebarItem(item) end
 	end)
