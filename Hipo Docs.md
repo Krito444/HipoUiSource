@@ -8,7 +8,7 @@ Dans ton script client, charge la source puis crée l’interface :
 
 ~~~lua
 local HipoControls = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/Krito444/HipoUiSource/main/HipoControlsBase/HipoControlsBase.lua"
+    "https://github.com/Krito444/HipoUiSource/raw/refs/heads/main/HipoControlsBase/HipoControlsBase.lua"
 ))()
 
 local UI_CONFIG = {
