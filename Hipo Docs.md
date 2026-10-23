@@ -62,7 +62,7 @@ Chaque ligne prépare une partie du menu : `AddPage` crée le bouton latéral et
 Tu peux ajouter plusieurs pages au même onglet latéral en donnant leurs noms après le nom de la première page. Le troisième résultat contient les constructeurs de contrôles, indexés par nom :
 
 ~~~lua
-local farm, farmTab, farmPages = ui:AddPage("Farm", "package", "Farm", "AutreTabs")
+local farm, _, farmPages = ui:AddPage("Farm", "package", "Farm", "AutreTabs")
 local farmOptions = farm:Section("Options Farm", "settings")
 local otherOptions = farmPages.AutreTabs:Section("Autres options", "settings")
 
@@ -70,6 +70,66 @@ local objects = ui:AddPage("Inventaire", "package", "Objets")
 ~~~
 
 `Farm` et `AutreTabs` deviennent deux pages horizontales sous le même bouton latéral **Farm**. `Inventaire` reste un onglet latéral séparé. Le premier résultat de `AddPage` reste le constructeur de contrôles de la première page, ce qui conserve les anciens appels à trois paramètres.
+
+### Ranger le script avec des tables
+
+Tu peux ranger les pages, les sections et les contrôles dans des tables nommées. La table `sections` contient les sections par page; les tables `toggles` et `buttons` regroupent ensuite les contrôles par type. Les clés (`Farm`, `Options1`, `AutoFarm`, etc.) servent à retrouver facilement chaque élément dans ton script.
+
+~~~lua
+local farmPage, _, farmPageNames = ui:AddPage("Farm", "package", "Farm", "AutreTabs")
+local inventoryPage = ui:AddPage("Inventaire", "package", "Objets")
+
+local pages = {
+    Farm = farmPage,
+    AutreTabs = farmPageNames.AutreTabs,
+    Inventaire = inventoryPage,
+}
+
+local sections = {
+    Farm = {
+        Options1 = pages.Farm:Section("Options 1", "settings"),
+        Options2 = pages.Farm:Section("Options 2", "settings"),
+    },
+    AutreTabs = {
+        Options = pages.AutreTabs:Section("Autres options", "settings"),
+    },
+    Inventaire = {
+        Options = pages.Inventaire:Section("Options", "package"),
+    },
+}
+
+local toggles = {
+    Farm = {
+        AutoFarm = sections.Farm.Options1:Toggle({
+            Text = "Auto Farm",
+            Default = false,
+            Callback = function(enabled)
+                print("Auto Farm :", enabled)
+            end,
+        }),
+    },
+    Inventaire = {
+        AfficherObjets = sections.Inventaire.Options:Toggle({
+            Text = "Afficher les objets",
+            Default = true,
+        }),
+    },
+}
+
+local buttons = {
+    Farm = {
+        Demarrer = sections.Farm.Options2:Button({
+            Text = "Démarrer le farm",
+            ButtonText = "Run",
+            Callback = function()
+                print("Farm démarré")
+            end,
+        }),
+    },
+}
+~~~
+
+Par exemple, `sections.Farm.Options1` désigne la première section de Farm et `toggles.Farm.AutoFarm` désigne son toggle. Pour retrouver un bouton, cherche dans `buttons`; pour ajouter d’autres familles de contrôles, reprends le même modèle avec une table dédiée, comme `dropdowns` ou `sliders`. La méthode de création reste `:Section(...)` au singulier : `sections` est simplement une table Lua qui organise ton script.
 
 Les icônes utilisent les noms Lucide, par exemple `settings`, `eye`, `search` ou `package`.
 
