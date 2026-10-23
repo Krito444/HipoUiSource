@@ -6026,10 +6026,30 @@ function ui:AddSidebarTab(name, iconName)
     return addSidebarTab(name, iconName)
 end
 
--- Ajoute une page à un onglet latéral et retourne son constructeur de contrôles.
-function ui:AddPage(sidebarName, iconName, pageName)
+-- Ajoute une ou plusieurs pages au même onglet latéral.
+-- Retourne les contrôles de la première page, son entrée d'onglet, puis les contrôles indexés par nom.
+function ui:AddPage(sidebarName, iconName, pageName, ...)
+    assert(type(pageName) == "string" and pageName ~= "", "AddPage attend un nom de page non vide")
+
+    local additionalPageNames = {}
+    local requestedNames = {[pageName] = true}
+    for index = 1, select("#", ...) do
+        local additionalPageName = select(index, ...)
+        assert(type(additionalPageName) == "string" and additionalPageName ~= "", "AddPage attend des noms de page non vides")
+        assert(not requestedNames[additionalPageName], "AddPage a reçu deux fois le même nom de page : " .. additionalPageName)
+        requestedNames[additionalPageName] = true
+        table.insert(additionalPageNames, additionalPageName)
+    end
+
     local sidebar = self:AddSidebarTab(sidebarName, iconName)
-    return sidebar:Tab(pageName)
+    local controls, entry = sidebar:Tab(pageName)
+    local pagesByName = {[pageName] = controls}
+
+    for _, additionalPageName in ipairs(additionalPageNames) do
+        pagesByName[additionalPageName] = sidebar:Tab(additionalPageName)
+    end
+
+    return controls, entry, pagesByName
 end
 
 function ui:Destroy()

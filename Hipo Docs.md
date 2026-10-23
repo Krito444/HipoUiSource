@@ -59,16 +59,17 @@ L’image ci-dessous juxtapose le code et le rendu dans l’interface.
 Chaque ligne prépare une partie du menu : `AddPage` crée le bouton latéral et la page, `:Section` regroupe les contrôles et `:Toggle` ajoute l’interrupteur. `Default` définit son état au démarrage. La fonction `Callback` reçoit `true` quand le toggle est activé et `false` quand il est désactivé.
 À l’exécution, clique sur l’icône **Inventaire** dans la barre latérale pour afficher la page.
 
-Pour ajouter plusieurs pages au même onglet latéral, réutilise le nom et l’icône sur la même instance `ui` :
+Tu peux ajouter plusieurs pages au même onglet latéral en donnant leurs noms après le nom de la première page. Le troisième résultat contient les constructeurs de contrôles, indexés par nom :
 
 ~~~lua
-local settings = ui:AddPage("Inventaire", "package", "Réglages")
-local settingsSection = settings:Section("Affichage", "eye")
-settingsSection:Dropdown({
-    Text = "Trier par",
-    Options = {"Nom", "Rareté"},
-})
+local farm, farmTab, farmPages = ui:AddPage("Farm", "package", "Farm", "AutreTabs")
+local farmOptions = farm:Section("Options Farm", "settings")
+local otherOptions = farmPages.AutreTabs:Section("Autres options", "settings")
+
+local objects = ui:AddPage("Inventaire", "package", "Objets")
 ~~~
+
+`Farm` et `AutreTabs` deviennent deux pages horizontales sous le même bouton latéral **Farm**. `Inventaire` reste un onglet latéral séparé. Le premier résultat de `AddPage` reste le constructeur de contrôles de la première page, ce qui conserve les anciens appels à trois paramètres.
 
 Les icônes utilisent les noms Lucide, par exemple `settings`, `eye`, `search` ou `package`.
 
