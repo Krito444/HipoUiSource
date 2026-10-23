@@ -5353,6 +5353,7 @@ local navTooltipSheens = {}
 local navTooltipWidths = {}
 local navContentPositions = {}
 local navItems = {}
+local settingsNavItem = nil
 local selectedNavIndex = 1
 local selectSidebarItem
 local navContainer
@@ -5453,7 +5454,7 @@ end
 navContainer = make("ScrollingFrame", rail, {
 	Name = "SidebarTabs",
 	Position = UDim2.new(0, 0, 0, 60),
-	Size = UDim2.new(1, 0, 1, -112),
+	Size = UDim2.new(1, 0, 1, -68),
 	BackgroundTransparency = 1,
 	BorderSizePixel = 0,
 	CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -5470,33 +5471,21 @@ local activeIndicator = make("Frame", navContainer, {
 	Size = UDim2.fromOffset(3, 18),
 	BackgroundColor3 = COLORS.lime,
 	BorderSizePixel = 0,
-	Visible = false,
+	Visible = true,
 	ZIndex = 2,
 })
 round(activeIndicator, 2)
 
-local settingsIndicator = make("Frame", rail, {
-	Name = "SettingsActiveIndicator",
-	Position = UDim2.new(0, 1, 1, -38),
-	Size = UDim2.fromOffset(3, 18),
-	BackgroundColor3 = COLORS.lime,
-	BorderSizePixel = 0,
-	Visible = true,
-	ZIndex = 2,
-})
-round(settingsIndicator, 2)
-
 local function registerSidebarItem(name, icon)
 	local index = #navItems + 1
-	local isPinnedSettings = name == "Settings"
-	local item = setmetatable({Name = name, Icon = icon, Tabs = {}, ActiveTab = nil, IsPinned = isPinnedSettings}, SidebarGroupMethods)
+	local isSettings = name == "Settings"
+	local item = setmetatable({Name = name, Icon = icon, Tabs = {}, ActiveTab = nil}, SidebarGroupMethods)
 	table.insert(navItems, item)
-	local buttonPosition = isPinnedSettings
-		and UDim2.new(0.5, 0, 1, -12)
+	local buttonPosition = isSettings
+		and UDim2.fromOffset(7, 4 + (#navItems - 1) * 43)
 		or UDim2.fromOffset(7, 4 + (index - 2) * 43)
-	local button = make("TextButton", isPinnedSettings and rail or navContainer, {
+	local button = make("TextButton", navContainer, {
 		Name = "SidebarTabButton" .. tostring(index),
-		AnchorPoint = isPinnedSettings and Vector2.new(0.5, 1) or Vector2.zero,
 		Position = buttonPosition,
 		Size = UDim2.fromOffset(34, 34),
 		BackgroundColor3 = index == selectedNavIndex and COLORS.limeDark or COLORS.rail,
@@ -5509,6 +5498,7 @@ local function registerSidebarItem(name, icon)
 	round(button, 10)
 	navContentPositions[index] = button.Position
 	item.Button = button
+	if isSettings then settingsNavItem = item end
 	navButtons[index] = button
 	navTooltipWidths[index] = math.clamp(20 + #name * 6.25, 58, 106)
 	navIconImages[index] = LucideIcons.Create(button, icon, {
@@ -5594,17 +5584,21 @@ local function registerSidebarItem(name, icon)
 	end)
 	button.Activated:Connect(function()
 		selectedNavIndex = index
-		activeIndicator.Visible = not item.IsPinned
-		settingsIndicator.Visible = item.IsPinned
-		if not item.IsPinned then
-			local contentPosition = navContentPositions[index]
-			animateTo(activeIndicator, {
-				Position = UDim2.new(0, 1, 0, contentPosition.Y.Offset + 8),
-			}, SELECTION_TWEEN)
-		end
+		local contentPosition = navContentPositions[index]
+		animateTo(activeIndicator, {
+			Position = UDim2.new(0, 1, 0, contentPosition.Y.Offset + 8),
+		}, SELECTION_TWEEN)
 		for n = 1, #navItems do updateNavButton(n, true) end
 		if selectSidebarItem then selectSidebarItem(item) end
 	end)
+	if settingsNavItem and not isSettings then
+		local settingsPosition = UDim2.fromOffset(7, 4 + (#navItems - 1) * 43)
+		settingsNavItem.Button.Position = settingsPosition
+		navContentPositions[1] = settingsPosition
+		if selectedNavIndex == 1 then
+			activeIndicator.Position = UDim2.new(0, 1, 0, settingsPosition.Y.Offset + 8)
+		end
+	end
 	return item
 end
 
