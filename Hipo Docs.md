@@ -1,68 +1,37 @@
-# Hipo Docs
-## Ajouter des contrôles — guide rapide
+# HipoControls Base — guide
 
-Ce guide correspond au fichier autonome HipoControls.client.lua. Il contient la bibliothèque complète et peut être lancé dans un jeu Roblox standard.
+## Source de référence
 
-## Démarrage rapide — fichier unique
+La bibliothèque et son menu de base sont réunis dans [`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua). C’est le seul fichier source à modifier pour personnaliser l’interface.
 
-1. Dans Roblox Studio, crée un `LocalScript` sous `StarterPlayer > StarterPlayerScripts`, puis copie-colle dedans tout le contenu de `HipoControls.client.lua`.
-2. Lance le jeu avec **Play**. L’interface et les contrôles d’exemple apparaissent automatiquement.
-3. Personnalise le code après le commentaire `PERSONNALISE TON INTERFACE À PARTIR D'ICI`, en bas du fichier.
+Vers la fin du fichier, repère le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI`. Ajoute ton menu à cet endroit, après la définition des fonctions de la bibliothèque.
 
-Le fichier contient la bibliothèque et le code de démarrage. Il n’utilise ni `require`, ni `loadstring`, ni `game:HttpGet`. Un `LocalScript` Roblox standard ne peut pas télécharger puis exécuter du code Luau depuis GitHub Raw. Pour un jeu Roblox standard, le code doit donc être inclus dans le jeu.
+## Organisation du menu
 
-## Ajouter un contrôle
-
-Dans `HipoControls.client.lua`, repère la ligne :
+Un onglet latéral contient des onglets horizontaux. Chaque onglet horizontal contient des sections, puis des contrôles :
 
 ~~~lua
-local main = win:Section("Paramètres", "settings")
-~~~
+local inventory = addSidebarTab("Inventaire", "package")
+local objects = inventory:Tab("Objets")
+local options = objects:Section("Options", "package")
 
-Ajoute tes contrôles après cette ligne, avec `main:NomDuContrôle({...})`. Tu peux en ajouter autant que tu veux.
-
-Pour créer une autre carte :
-
-~~~lua
-local display = win:Section("Affichage", "eye")
-
-display:Toggle({
-    Text = "Afficher les effets",
+options:Toggle({
+    Text = "Afficher les objets",
     Default = true,
-})
-~~~
-
-Dans la bibliothèque, chaque appel à `win:Section(...)` crée une carte dans la fenêtre. Tu peux ajouter autant de sections et de contrôles que nécessaire.
-
-Si tu as déjà un conteneur graphique, tu peux le fournir à la place :
-
-~~~lua
-local window = HipoControls.new(monScreenGui, {Title = "Mon interface"})
-~~~
-
-## Choisir un contrôle
-
-### Interrupteur — Toggle
-
-Reçoit true quand l’option est activée et false quand elle est désactivée.
-
-~~~lua
-main:Toggle({
-    Text = "Activer",
-    Description = "Description facultative.",
-    Default = false,
     Callback = function(enabled)
         print(enabled)
     end,
 })
 ~~~
 
-### Bouton — Button
+Les icônes utilisent les noms Lucide, par exemple `settings`, `eye`, `search` ou `package`.
 
-Le callback s’exécute au clic. ButtonText est le texte du bouton.
+## Contrôles disponibles
+
+### Bouton
 
 ~~~lua
-main:Button({
+options:Button({
     Text = "Enregistrer",
     ButtonText = "Sauvegarder",
     Style = "filled",
@@ -72,14 +41,12 @@ main:Button({
 })
 ~~~
 
-Styles disponibles : outline, filled, ghost et soft. Tu peux aussi écrire Primary = true pour utiliser le style filled.
+Styles disponibles : `outline`, `filled`, `ghost` et `soft`. `Primary = true` sélectionne aussi le style rempli.
 
-### Curseur — Slider
-
-Min et Max définissent les bornes. Step règle le pas et Suffix ajoute une unité après le nombre.
+### Curseur
 
 ~~~lua
-main:Slider({
+options:Slider({
     Text = "Distance",
     Min = 0,
     Max = 100,
@@ -92,27 +59,23 @@ main:Slider({
 })
 ~~~
 
-### Champ texte — Input
-
-Le callback est appelé quand le joueur valide le texte ou quitte le champ.
+### Champ texte
 
 ~~~lua
-main:Input({
+options:Input({
     Text = "Nom",
     Placeholder = "Écris ici...",
     Default = "",
-    Callback = function(text)
-        print(text)
+    Callback = function(value)
+        print(value)
     end,
 })
 ~~~
 
-### Liste — Dropdown
-
-Options contient les choix. Default doit être un des choix.
+### Liste déroulante
 
 ~~~lua
-main:Dropdown({
+options:Dropdown({
     Text = "Mode",
     Options = {"Simple", "Avancé", "Personnalisé"},
     Default = "Simple",
@@ -122,12 +85,10 @@ main:Dropdown({
 })
 ~~~
 
-### Raccourci clavier — Keybind
-
-Clique sur le contrôle pour choisir une touche. Ensuite, Callback s’exécute quand cette touche est pressée.
+### Raccourci clavier
 
 ~~~lua
-main:Keybind({
+options:Keybind({
     Text = "Raccourci",
     Default = Enum.KeyCode.F,
     Callback = function(key)
@@ -136,26 +97,18 @@ main:Keybind({
 })
 ~~~
 
-### Sélecteur de couleur — ColorPicker
-
-Value est la couleur initiale. Callback reçoit la nouvelle couleur.
+### Couleurs
 
 ~~~lua
-main:ColorPicker({
+options:ColorPicker({
     Text = "Couleur",
     Value = Color3.fromRGB(80, 170, 255),
     Callback = function(color)
         print(color)
     end,
 })
-~~~
 
-### Palette de couleurs — Palette
-
-Affiche plusieurs couleurs sous forme de pastilles. Value doit être une couleur présente dans Colors.
-
-~~~lua
-main:Palette({
+options:Palette({
     Text = "Couleur rapide",
     Colors = {
         Color3.fromRGB(80, 170, 255),
@@ -169,53 +122,15 @@ main:Palette({
 })
 ~~~
 
-## Lire ou modifier une valeur
+## Options communes
 
-Les contrôles qui ont une valeur renvoient un handle. Garde-le dans une variable pour lire ou changer la valeur plus tard.
-
-~~~lua
-local volume = main:Slider({
-    Text = "Volume",
-    Min = 0,
-    Max = 100,
-    Default = 50,
-})
-
-print(volume:Get()) -- lit la valeur actuelle
-volume:Set(75)      -- change la valeur et appelle Callback
-volume:Set(25, true) -- change la valeur sans appeler Callback
-~~~
-
-Cette méthode fonctionne pour Toggle, Slider, Input, Dropdown, Keybind, ColorPicker et Palette.
-
-## Les options à retenir
-
-| Option | Sert à |
+| Option | Utilité |
 |---|---|
-| Text | Nom affiché à côté du contrôle. |
-| Description | Petite explication sous le nom. |
-| Default | Valeur au démarrage pour Toggle, Slider, Input, Dropdown et Keybind. |
-| Value | Valeur au démarrage pour ColorPicker et Palette. |
-| Callback | Code exécuté lorsque la valeur ou l’action change. |
-| Icon | Icône facultative à côté du nom. |
+| `Text` | Nom du contrôle. |
+| `Description` | Texte explicatif facultatif. |
+| `Default` | Valeur initiale pour les toggles, curseurs, champs, listes et raccourcis. |
+| `Value` | Valeur initiale pour les sélecteurs de couleur. |
+| `Callback` | Fonction appelée lors d’un changement ou d’une action. |
+| `Icon` | Icône facultative du contrôle. |
 
-Les icônes utilisent les noms Lucide, par exemple settings, eye, search ou heart. Une icône inconnue est simplement ignorée.
-
-## Si rien ne s’affiche
-
-Vérifie ces points :
-
-1. Le code complet est collé dans un `LocalScript` sous `StarterPlayer > StarterPlayerScripts`.
-2. Tu as lancé le jeu avec **Play**.
-3. Ouvre **Vue > Output (Sortie)** pour lire une éventuelle erreur.
-
-## À propos des onglets
-
-Le fichier autonome utilise `win:Section` pour créer des cartes dans la fenêtre. Il ne reprend pas toute l’API Ember : les options `Subtitle`, `Size` et `Keybind` ne sont pas encore prises en charge par ce fichier.
-
-## Référence de présentation
-
-Le guide suit une organisation débutant inspirée de la documentation Ember : démarrage rapide, contrôles séparés, puis lecture des valeurs. Les exemples ci-dessus correspondent au fichier autonome HipoControls de ce dossier.
-
-[Documentation Ember](https://rbx.lol/docs/ember/)
-
+Les contrôles avec une valeur renvoient un objet de contrôle. Garde-le dans une variable pour consulter ou modifier sa valeur avec `:Get()` et `:Set(...)`.

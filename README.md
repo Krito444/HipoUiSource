@@ -1,11 +1,7 @@
-# HipoControls — version autonome Roblox
+# HipoControls Base
 
-Pour essayer l’interface dans un jeu Roblox standard sans `require`, utilise **HipoControls.client.lua**. Crée un `LocalScript` dans `StarterPlayer > StarterPlayerScripts`, copie-colle tout le contenu du fichier dedans, puis lance **Play**. Il contient la bibliothèque et un exemple prêt à modifier.
+Ce dépôt conserve une seule source de référence pour la bibliothèque : [`HipoControlsBase/HipoControlsBase.lua`](HipoControlsBase/HipoControlsBase.lua).
 
-Un `LocalScript` standard ne peut pas exécuter directement du code téléchargé depuis GitHub Raw avec `loadstring(game:HttpGet(...))`. Le code client doit être inclus dans ton jeu.
+Le fichier contient la bibliothèque et le menu de base. Pour personnaliser l’interface, ajoute tes onglets, sections et contrôles dans le bloc `AJOUTER VOTRE MENU PERSONNALISÉ ICI`, vers la fin du fichier.
 
-Voir [Hipo Docs — ajouter des contrôles](Hipo%20Docs.md) pour personnaliser les sections et les contrôles.
-
-## Autres sources
-
-`HipoControls.ModuleScript.lua`, `TargetHunterClient.client.lua` et `TargetHunterServer.server.lua` sont les sources séparées de l’ancienne intégration Studio. `TestEnJeuExact.lua` sert à l’aperçu de l’interface avec le Remote neutralisé.
+Consulte [Hipo Docs.md](Hipo%20Docs.md) pour les exemples d’utilisation et les contrôles disponibles.
