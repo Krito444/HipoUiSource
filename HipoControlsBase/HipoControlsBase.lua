@@ -2905,7 +2905,7 @@ local function createSectionRow(section, text, controlWidth, name, description, 
     return row
 end
 
-local function makeSectionButton(parent, text, width, theme, bindHover)
+local function makeSectionButton(parent, text, width, theme, bindHover, font)
     local button = create("TextButton", parent, {
         AnchorPoint = Vector2.new(1, 0.5),
         Position = UDim2.new(1, -12, 0.5, 0),
@@ -2914,7 +2914,7 @@ local function makeSectionButton(parent, text, width, theme, bindHover)
         BorderSizePixel = 0,
         Text = text or "Select...",
         TextColor3 = theme.text,
-        Font = Enum.Font.GothamMedium,
+        Font = font or Enum.Font.GothamMedium,
         TextSize = 11,
         AutoButtonColor = false,
         TextTruncate = Enum.TextTruncate.AtEnd,
@@ -2933,7 +2933,7 @@ function SectionMethods:Button(config)
     assert(type(config.Text) == "string", "Section:Button requires Text")
     local theme = self.Theme or ControlLibrary.Theme
     local row = createSectionRow(self, config.Text or "Button", 132, "Button", config.Description, config.Icon)
-    local button = makeSectionButton(row, config.ButtonText or "Run", 132, theme, false)
+    local button = makeSectionButton(row, config.ButtonText or "Run", 132, theme, false, Enum.Font.Gotham)
     local style = config.Style
     if style == nil then
         style = config.Primary == true and "filled" or "outline"
@@ -3009,7 +3009,7 @@ function SectionMethods:Button(config)
         if style == "outline" then
             background = isHovered and outlineHoverFill or theme.control
             backgroundTransparency = isHovered and 0 or 1
-            textColor = isHovered and outlineHoverColor or theme.text
+            textColor = isHovered and outlineHoverColor or (theme.muted or theme.text)
             borderColor = isHovered and outlineHoverColor or (theme.line or theme.muted)
             borderTransparency = isHovered and 0 or 0.2
         elseif style == "filled" then
