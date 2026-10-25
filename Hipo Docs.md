@@ -10,10 +10,9 @@ Copie cet exemple dans un script Potassium. Il charge la bibliothèque, crée le
 local HipoControls = loadstring(game:HttpGet(
     "https://github.com/Krito444/HipoUiSource/raw/refs/heads/main/HipoControlsBase/HipoControlsBase.lua"
 ))()
-
 local ui = HipoControls.new({
-    Title = "Mon interface",
-    Keybind = Enum.KeyCode.RightControl,
+	Title = "Game Name ",
+	Keybind = Enum.KeyCode.RightControl,
 })
 
 local Inventaire = ui:AddPage("Inventaire", "package", "Objets")
