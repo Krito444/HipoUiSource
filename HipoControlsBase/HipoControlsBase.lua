@@ -14,6 +14,24 @@ local function createInterface(options)
     if initialHideKey == nil then initialHideKey = Enum.KeyCode.RightControl end
     assert(typeof(initialHideKey) == "EnumItem" and initialHideKey.EnumType == Enum.KeyCode, "[HipoControls] Keybind doit être un Enum.KeyCode")
 
+    local defaultTabPageName, defaultTabSidebarName
+    if type(options.DefaultTab) == "string" then
+        assert(options.DefaultTab ~= "", "[HipoControls] DefaultTab doit être un nom de page non vide")
+        defaultTabPageName = options.DefaultTab
+    elseif options.DefaultTab ~= nil then
+        assert(type(options.DefaultTab) == "table", "[HipoControls] DefaultTab doit être un nom de page ou une table")
+        defaultTabPageName = options.DefaultTab.Page
+        defaultTabSidebarName = options.DefaultTab.Sidebar
+        assert(
+            type(defaultTabPageName) == "string" and defaultTabPageName ~= "",
+            "[HipoControls] DefaultTab.Page doit être un nom de page non vide"
+        )
+        assert(
+            defaultTabSidebarName == nil or (type(defaultTabSidebarName) == "string" and defaultTabSidebarName ~= ""),
+            "[HipoControls] DefaultTab.Sidebar doit être un nom non vide"
+        )
+    end
+
 -- ===== Services Roblox et validation du joueur =====
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -5676,12 +5694,6 @@ local function registerSidebarItem(name, icon)
 		updateNavButton(index)
 	end)
 	button.Activated:Connect(function()
-		selectedNavIndex = index
-		local contentPosition = navContentPositions[index]
-		animateTo(activeIndicator, {
-			Position = UDim2.new(0, 1, 0, contentPosition.Y.Offset + 8),
-		}, SELECTION_TWEEN)
-		for n = 1, #navItems do updateNavButton(n, true) end
 		if selectSidebarItem then selectSidebarItem(item) end
 	end)
 	if settingsNavItem and not isSettings then
@@ -5735,6 +5747,8 @@ local pages = {}
 local sectionPages = {}
 local activeTab = "General"
 local activeSidebarItem = nil
+local firstUserTabSelected = false
+local defaultTabSelected = false
 local updateTabs
 local selectTopTab
 local body = make("Frame", panel, {
@@ -5948,6 +5962,20 @@ end
 selectSidebarItem = function(item)
 	if item == activeSidebarItem then return end
 
+	for index, registeredItem in ipairs(navItems) do
+		if registeredItem == item then
+			selectedNavIndex = index
+			local contentPosition = navContentPositions[index]
+			animateTo(activeIndicator, {
+				Position = UDim2.new(0, 1, 0, contentPosition.Y.Offset + 8),
+			}, SELECTION_TWEEN)
+			for buttonIndex = 1, #navItems do
+				updateNavButton(buttonIndex, true)
+			end
+			break
+		end
+	end
+
 	local oldPage = currentVisiblePage
 	activeSidebarItem = item
 	local selectedTab = item.ActiveTab or item.Tabs[1]
@@ -5966,6 +5994,15 @@ selectSidebarItem = function(item)
 		transitionSection(oldPage, newPage)
 	end
 	updateTabs()
+end
+
+local function selectSidebarPage(sidebarItem, entry)
+	sidebarItem.ActiveTab = entry
+	if sidebarItem == activeSidebarItem then
+		selectTopTab(entry)
+	else
+		selectSidebarItem(sidebarItem)
+	end
 end
 
 local nextSidebarPageId = 0
@@ -5999,6 +6036,19 @@ function SidebarGroupMethods:Tab(name)
 			transitionSection(oldPage, page)
 		end
 	end
+
+	local isConfiguredDefault = defaultTabPageName
+		and entry.Name == defaultTabPageName
+		and (defaultTabSidebarName == nil or self.Name == defaultTabSidebarName)
+	if isConfiguredDefault and not defaultTabSelected then
+		defaultTabSelected = true
+		firstUserTabSelected = true
+		selectSidebarPage(self, entry)
+	elseif not firstUserTabSelected then
+		firstUserTabSelected = true
+		selectSidebarPage(self, entry)
+	end
+
 	updateTabs()
 	return controls, entry
 end

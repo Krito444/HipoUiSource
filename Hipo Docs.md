@@ -34,6 +34,18 @@ local UI_CONFIG = {
 
 `Keybind` définit le raccourci initial pour afficher ou masquer l’interface. Il reste modifiable pendant la session dans **Settings > General > Hide UI**. La taille de la fenêtre reste fixe.
 
+Par défaut, l’interface ouvre la première page utilisateur créée avec `AddPage`. Pour choisir une autre page au lancement, ajoute `DefaultTab` à `UI_CONFIG` :
+
+~~~lua
+local UI_CONFIG = {
+    Title = "Mon interface",
+    Keybind = Enum.KeyCode.RightControl,
+    DefaultTab = "Objets",
+}
+~~~
+
+`DefaultTab` peut être le nom de la page. Si plusieurs onglets ont ce même nom, précise aussi la barre latérale : `DefaultTab = { Sidebar = "Farm", Page = "AutreTabs" }`. La page peut être déclarée après `HipoControls.new`; elle sera sélectionnée quand `AddPage` la créera.
+
 ## Organisation du menu
 
 Un onglet latéral contient des pages. Chaque page contient des sections, puis des contrôles. Les sections d’une page se répartissent en deux colonnes; elles s’ajoutent alternativement à gauche et à droite. Sur une fenêtre étroite, elles repassent en une seule colonne. Appelle `AddPage` sur l’instance `ui` :
