@@ -3399,9 +3399,23 @@ function SectionMethods:Dropdown(config)
     local theme = self.Theme or ControlLibrary.Theme
     local options = config.Options or {"Option 1"}
     if #options == 0 then options = {"Option 1"} end
-    local index = table.find(options, controlDefault(config, options[1])) or 1
-    local row = createSectionRow(self, config.Text or "Dropdown", 156, "Dropdown", config.Description, config.Icon)
-    local dropdown = makeSectionButton(row, "", 156, theme, false)
+    local multiSelect = config.MultiSelect == true
+    local selectedIndices = {}
+    local index
+    if multiSelect then
+        local defaults = controlDefault(config, {})
+        assert(type(defaults) == "table", "Multi-select Dropdown Default must be a table")
+        for _, selectedOption in ipairs(defaults) do
+            local selectedIndex = table.find(options, selectedOption)
+            if selectedIndex then selectedIndices[selectedIndex] = true end
+        end
+    else
+        index = table.find(options, controlDefault(config, options[1])) or 1
+    end
+
+    local controlWidth = multiSelect and 194 or 156
+    local row = createSectionRow(self, config.Text or "Dropdown", controlWidth, "Dropdown", config.Description, config.Icon)
+    local dropdown = makeSectionButton(row, "", controlWidth, theme, false)
     dropdown.ZIndex = 21
     dropdown.TextXAlignment = Enum.TextXAlignment.Left
     create("UIPadding", dropdown, {PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 28)})
@@ -3413,13 +3427,13 @@ function SectionMethods:Dropdown(config)
         Color = theme.muted,
         ZIndex = dropdown.ZIndex + 1,
     })
-    local itemHeight = 27
-    local visibleOptions = math.max(1, config.VisibleOptions or 4)
+    local itemHeight = multiSelect and 31 or 27
+    local visibleOptions = math.max(1, config.VisibleOptions or (multiSelect and 5 or 4))
     local menu = create("ScrollingFrame", row, {
         Name = "DropdownOptions",
         AnchorPoint = Vector2.new(1, 0),
         Position = UDim2.new(1, -12, 1, 2),
-        Size = UDim2.fromOffset(156, math.min(#options, visibleOptions) * itemHeight),
+        Size = UDim2.fromOffset(controlWidth, math.min(#options, visibleOptions) * itemHeight),
         BackgroundColor3 = theme.control,
         BorderSizePixel = 0,
         CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -3437,6 +3451,7 @@ function SectionMethods:Dropdown(config)
     create("UIListLayout", menu, {Padding = UDim.new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder})
     local open = false
     local optionButtons = {}
+    local optionCheckboxes = {}
     local menuMotionTweens = {}
     local menuMotionToken = 0
     local screenGui = row:FindFirstAncestorOfClass("ScreenGui")
@@ -3444,6 +3459,39 @@ function SectionMethods:Dropdown(config)
     local menuHomePosition = menu.Position
     local originalZIndices = {[menu] = menu.ZIndex}
     local positionConnection
+    local function getSelectedValues()
+        local values = {}
+        for optionIndex, option in ipairs(options) do
+            if selectedIndices[optionIndex] then
+                table.insert(values, option)
+            end
+        end
+        return values
+    end
+    local function renderDropdownText()
+        if not multiSelect then
+            dropdown.Text = tostring(options[index])
+            return
+        end
+
+        local selected = getSelectedValues()
+        config.Value = selected
+        if #selected == 0 then
+            dropdown.Text = config.Placeholder or "Select..."
+        elseif #selected == 1 then
+            dropdown.Text = tostring(selected[1])
+        else
+            dropdown.Text = tostring(#selected) .. " selected"
+        end
+    end
+    local function renderCheckboxes()
+        for optionIndex, checkbox in ipairs(optionCheckboxes) do
+            local selected = selectedIndices[optionIndex] == true
+            checkbox.Box.BackgroundColor3 = selected and theme.lime or theme.card
+            checkbox.Stroke.Color = selected and theme.lime or theme.line
+            checkbox.Check.Visible = selected
+        end
+    end
     local function positionPopup()
         if not open or not screenGui or not menu.Parent then return end
         local scale = 1
@@ -3494,6 +3542,11 @@ function SectionMethods:Dropdown(config)
             play(optionButton, {BackgroundTransparency = isOpening and 0 or 1})
             play(optionButton, {TextTransparency = isOpening and 0 or 1})
         end
+        for _, checkbox in ipairs(optionCheckboxes) do
+            play(checkbox.Box, {BackgroundTransparency = isOpening and 0 or 1})
+            play(checkbox.Stroke, {Transparency = isOpening and 0 or 1})
+            play(checkbox.Check, {ImageTransparency = isOpening and 0 or 1})
+        end
         if not isOpening then
             local closingTween = menuMotionTweens[1]
             if closingTween then
@@ -3541,6 +3594,11 @@ function SectionMethods:Dropdown(config)
                     optionButton.BackgroundTransparency = 1
                     optionButton.TextTransparency = 1
                 end
+                for _, checkbox in ipairs(optionCheckboxes) do
+                    checkbox.Box.BackgroundTransparency = 1
+                    checkbox.Stroke.Transparency = 1
+                    checkbox.Check.ImageTransparency = 1
+                end
             end
             menu.Visible = true
             row.ZIndex = 20
@@ -3571,7 +3629,7 @@ function SectionMethods:Dropdown(config)
         if dropdownIcon then
             tween(dropdownIcon, {Rotation = open and 180 or 0})
         end
-        dropdown.Text = tostring(options[index])
+        renderDropdownText()
         if open then menu.CanvasPosition = Vector2.new(0, 0) end
     end
     row.Destroying:Connect(function()
@@ -3581,7 +3639,7 @@ function SectionMethods:Dropdown(config)
         local optionButton = create("TextButton", menu, {
             Name = "Option" .. tostring(optionIndex),
             LayoutOrder = optionIndex,
-            Size = UDim2.new(1, -6, 0, 26),
+            Size = UDim2.new(1, -6, 0, multiSelect and 30 or 26),
             BackgroundColor3 = theme.control,
             BorderSizePixel = 0,
             Text = tostring(option),
@@ -3594,9 +3652,50 @@ function SectionMethods:Dropdown(config)
         })
         optionButtons[optionIndex] = optionButton
         round(optionButton, 6)
+        if multiSelect then
+            create("UIPadding", optionButton, {
+                PaddingLeft = UDim.new(0, 32),
+                PaddingRight = UDim.new(0, 8),
+            })
+            local box = create("Frame", optionButton, {
+                Name = "Checkbox",
+                AnchorPoint = Vector2.new(0, 0.5),
+                Position = UDim2.new(0, 8, 0.5, 0),
+                Size = UDim2.fromOffset(16, 16),
+                BackgroundColor3 = selectedIndices[optionIndex] and theme.lime or theme.card,
+                BorderSizePixel = 0,
+                ZIndex = optionButton.ZIndex + 1,
+            })
+            round(box, 4)
+            local stroke = create("UIStroke", box, {
+                Color = selectedIndices[optionIndex] and theme.lime or theme.line,
+                Thickness = 1,
+                Transparency = 0,
+            })
+            local check = LucideIcons.Create(box, "check", {
+                Name = "Checkmark",
+                Position = UDim2.fromOffset(2, 2),
+                Size = UDim2.fromOffset(12, 12),
+                Color = theme.card,
+                ZIndex = box.ZIndex + 1,
+            })
+            if check then
+                check.Visible = selectedIndices[optionIndex] == true
+            end
+            optionCheckboxes[optionIndex] = {Box = box, Stroke = stroke, Check = check}
+        end
         optionButton.MouseEnter:Connect(function() tween(optionButton, {BackgroundColor3 = theme.hover}) end)
         optionButton.MouseLeave:Connect(function() tween(optionButton, {BackgroundColor3 = theme.control}) end)
         optionButton.Activated:Connect(function()
+            if multiSelect then
+                selectedIndices[optionIndex] = not selectedIndices[optionIndex]
+                renderCheckboxes()
+                renderDropdownText()
+                if type(config.Callback) == "function" then
+                    config.Callback(getSelectedValues())
+                end
+                return
+            end
             index = optionIndex
             config.Value = option
             setOpen(false)
@@ -3614,24 +3713,73 @@ function SectionMethods:Dropdown(config)
         end
         if not contains(dropdown) and not contains(menu) then setOpen(false) end
     end)
-    local function render() dropdown.Text = tostring(options[index]) end
-    render()
+    renderDropdownText()
+    renderCheckboxes()
     setOpen(false)
     local handle = {Instance = dropdown, Menu = menu, Row = row}
-    function handle:GetValue() return options[index] end
+    function handle:GetValue()
+        if multiSelect then return getSelectedValues() end
+        return options[index]
+    end
     function handle:SetValue(newValue)
+        if multiSelect then
+            if type(newValue) ~= "table" then return nil end
+            local newSelection = {}
+            for _, selectedOption in ipairs(newValue) do
+                local selectedIndex = table.find(options, selectedOption)
+                if not selectedIndex then return nil end
+                newSelection[selectedIndex] = true
+            end
+            selectedIndices = newSelection
+            config.Value = getSelectedValues()
+            renderDropdownText()
+            renderCheckboxes()
+            return getSelectedValues()
+        end
         local newIndex = table.find(options, newValue)
         if not newIndex then return nil end
         index = newIndex
         config.Value = options[index]
-        render()
+        renderDropdownText()
         return config.Value
     end
-    return exposeSectionHandle(handle, config)
+    exposeSectionHandle(handle, config)
+    if multiSelect then
+        function handle:Set(newValue, silent)
+            if type(newValue) ~= "table" then return false end
+            local before = getSelectedValues()
+            local result = self:SetValue(newValue)
+            if result == nil then return false end
+            local after = getSelectedValues()
+            local changed = #before ~= #after
+            if not changed then
+                for selectedIndex, option in ipairs(before) do
+                    if after[selectedIndex] ~= option then
+                        changed = true
+                        break
+                    end
+                end
+            end
+            if changed and silent ~= true and type(config.Callback) == "function" then
+                spawnSessionTask(config.Callback, after)
+            end
+            return true, after
+        end
+    end
+    return handle
 end
 
 -- Both spellings are accepted for convenience.
 SectionMethods.DropDown = SectionMethods.Dropdown
+
+function SectionMethods:MultiDropdown(config)
+    config = config or {}
+    assert(type(config) == "table", "Section:MultiDropdown expects a config table")
+    config.MultiSelect = true
+    return self:Dropdown(config)
+end
+
+SectionMethods.MultiSelectDropdown = SectionMethods.MultiDropdown
 
 function SectionMethods:Keybind(config)
     config = config or {}

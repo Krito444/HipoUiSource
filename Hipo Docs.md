@@ -217,6 +217,36 @@ local Mode = Options:Dropdown({
 
 Les noms de méthodes `Dropdown` et `DropDown` sont tous deux acceptés.
 
+### Liste déroulante à sélection multiple
+
+Utilise `:MultiDropdown` pour ajouter une case à cocher devant chaque option. Le menu reste ouvert pendant la sélection. Le callback reçoit un tableau contenant les options cochées; `Default` accepte aussi un tableau.
+
+```lua
+local ModesChoisis = Options:MultiDropdown({
+    Text = "Modes actifs",
+    Options = {"Simple", "Avancé", "Personnalisé"},
+    Default = {"Simple", "Personnalisé"},
+    Callback = function(selectedModes)
+        print("Modes actifs :", table.concat(selectedModes, ", "))
+    end,
+})
+
+-- Lire ou changer la sélection après sa création
+local selection = ModesChoisis:Get()
+ModesChoisis:Set({"Avancé"})
+```
+
+Tu peux aussi conserver `:Dropdown` et activer `MultiSelect = true` dans sa configuration :
+
+```lua
+local ModesChoisis = Options:Dropdown({
+    Text = "Modes actifs",
+    Options = {"Simple", "Avancé", "Personnalisé"},
+    MultiSelect = true,
+    Default = {"Simple"},
+})
+```
+
 ### Raccourci clavier
 
 Clique sur le contrôle pour enregistrer un nouveau raccourci. Le callback est appelé lorsque cette touche est pressée.
