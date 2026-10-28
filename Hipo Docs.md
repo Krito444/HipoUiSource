@@ -217,7 +217,21 @@ local Mode = Options:Dropdown({
 
 Les noms de méthodes `Dropdown` et `DropDown` sont tous deux acceptés.
 
-> **Limite à connaître :** le dropdown Hipo n’accepte que des chaînes, affichées avec `tostring` et retrouvées avec `table.find`. Il ne permet pas d’afficher une image ou une icône pour chaque option. Pour une caisse, indique son nom et son ID dans le libellé. Pour afficher les icônes, il faudrait créer un menu personnalisé — retiré de cette version — ou faire évoluer HipoUiSource afin que chaque option puisse recevoir un champ `Icon`.
+Les options texte existantes restent compatibles. Pour afficher une image par entrée, décris chaque option avec `Text`, `Value` et `Icon`. `Text` est le libellé affiché, `Value` est la valeur renvoyée par `Get()` et le callback, et `Icon` accepte un ID Roblox ou un identifiant `rbxassetid://`. Cette forme fonctionne avec `Dropdown` et `MultiDropdown`.
+
+```lua
+local Caisses = Options:MultiDropdown({
+    Text = "Caisses",
+    Options = {
+        {
+            Text = "Z Strikers · ZStrikers",
+            Value = "ZStrikers",
+            Icon = "rbxassetid://88648340062384",
+        },
+    },
+    Default = {"ZStrikers"},
+})
+```
 
 ### Liste déroulante à sélection multiple
 

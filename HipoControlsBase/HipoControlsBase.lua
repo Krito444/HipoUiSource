@@ -3393,15 +3393,64 @@ end
 
 local activeSectionDropdownCloser
 
--- Dropdown options are text labels only (tostring + table.find); per-option images/icons
--- are unsupported. Include identifying details, such as a crate name and ID, in the label.
--- Icons require a custom menu or an Icon field added to the public API.
+-- Options can be plain values or descriptors: {Text, Value, Icon}.
+-- Plain values keep their original behavior; descriptor icons use Roblox image content IDs.
 function SectionMethods:Dropdown(config)
     config = config or {}
     assert(type(config) == "table", "Section:Dropdown expects a config table")
     local theme = self.Theme or ControlLibrary.Theme
     local options = config.Options or {"Option 1"}
     if #options == 0 then options = {"Option 1"} end
+
+    local function getOptionText(option)
+        if type(option) == "table" then
+            local text = option.Text or option.Label or option.Value
+            assert(text ~= nil, "Dropdown option descriptors require Text or Value")
+            return tostring(text)
+        end
+        return tostring(option)
+    end
+
+    local function getOptionValue(option)
+        if type(option) == "table" then
+            local value = option.Value
+            if value == nil then value = option.Text or option.Label end
+            assert(value ~= nil, "Dropdown option descriptors require Text or Value")
+            return value
+        end
+        return option
+    end
+
+    local function getOptionIcon(option)
+        if type(option) ~= "table" then return nil end
+        local icon = option.Icon
+        if type(icon) == "number" and icon > 0 then
+            return "rbxassetid://" .. tostring(math.floor(icon))
+        end
+        if type(icon) == "string" and icon ~= "" then
+            if icon:match("^%d+$") then return "rbxassetid://" .. icon end
+            return icon
+        end
+        return nil
+    end
+
+    local function findOptionIndex(value)
+        for optionIndex, option in ipairs(options) do
+            if getOptionValue(option) == value then
+                return optionIndex
+            end
+        end
+        return nil
+    end
+
+    local hasOptionIcons = false
+    for _, option in ipairs(options) do
+        if getOptionIcon(option) then
+            hasOptionIcons = true
+            break
+        end
+    end
+
     local multiSelect = config.MultiSelect == true
     local selectedIndices = {}
     local index
@@ -3409,11 +3458,11 @@ function SectionMethods:Dropdown(config)
         local defaults = controlDefault(config, {})
         assert(type(defaults) == "table", "Multi-select Dropdown Default must be a table")
         for _, selectedOption in ipairs(defaults) do
-            local selectedIndex = table.find(options, selectedOption)
+            local selectedIndex = findOptionIndex(selectedOption)
             if selectedIndex then selectedIndices[selectedIndex] = true end
         end
     else
-        index = table.find(options, controlDefault(config, options[1])) or 1
+        index = findOptionIndex(controlDefault(config, getOptionValue(options[1]))) or 1
     end
 
     local controlWidth = multiSelect and 194 or 156
@@ -3454,6 +3503,7 @@ function SectionMethods:Dropdown(config)
     create("UIListLayout", menu, {Padding = UDim.new(0, 1), SortOrder = Enum.SortOrder.LayoutOrder})
     local open = false
     local optionButtons = {}
+    local optionIcons = {}
     local optionCheckboxes = {}
     local menuMotionTweens = {}
     local menuMotionToken = 0
@@ -3466,14 +3516,14 @@ function SectionMethods:Dropdown(config)
         local values = {}
         for optionIndex, option in ipairs(options) do
             if selectedIndices[optionIndex] then
-                table.insert(values, option)
+                table.insert(values, getOptionValue(option))
             end
         end
         return values
     end
     local function renderDropdownText()
         if not multiSelect then
-            dropdown.Text = tostring(options[index])
+            dropdown.Text = getOptionText(options[index])
             return
         end
 
@@ -3482,7 +3532,12 @@ function SectionMethods:Dropdown(config)
         if #selected == 0 then
             dropdown.Text = config.Placeholder or "Select..."
         elseif #selected == 1 then
-            dropdown.Text = tostring(selected[1])
+            for optionIndex, option in ipairs(options) do
+                if selectedIndices[optionIndex] then
+                    dropdown.Text = getOptionText(option)
+                    break
+                end
+            end
         else
             dropdown.Text = tostring(#selected) .. " selected"
         end
@@ -3545,6 +3600,9 @@ function SectionMethods:Dropdown(config)
             play(optionButton, {BackgroundTransparency = isOpening and 0 or 1})
             play(optionButton, {TextTransparency = isOpening and 0 or 1})
         end
+        for _, optionIcon in ipairs(optionIcons) do
+            play(optionIcon, {ImageTransparency = isOpening and 0 or 1})
+        end
         for _, checkbox in ipairs(optionCheckboxes) do
             play(checkbox.Box, {BackgroundTransparency = isOpening and 0 or 1})
             play(checkbox.Stroke, {Transparency = isOpening and 0 or 1})
@@ -3597,6 +3655,9 @@ function SectionMethods:Dropdown(config)
                     optionButton.BackgroundTransparency = 1
                     optionButton.TextTransparency = 1
                 end
+                for _, optionIcon in ipairs(optionIcons) do
+                    optionIcon.ImageTransparency = 1
+                end
                 for _, checkbox in ipairs(optionCheckboxes) do
                     checkbox.Box.BackgroundTransparency = 1
                     checkbox.Stroke.Transparency = 1
@@ -3645,7 +3706,7 @@ function SectionMethods:Dropdown(config)
             Size = UDim2.new(1, -6, 0, multiSelect and 30 or 26),
             BackgroundColor3 = theme.control,
             BorderSizePixel = 0,
-            Text = tostring(option),
+            Text = getOptionText(option),
             TextColor3 = theme.text,
             TextXAlignment = Enum.TextXAlignment.Left,
             Font = Enum.Font.Gotham,
@@ -3657,7 +3718,7 @@ function SectionMethods:Dropdown(config)
         round(optionButton, 6)
         if multiSelect then
             create("UIPadding", optionButton, {
-                PaddingLeft = UDim.new(0, 32),
+                PaddingLeft = UDim.new(0, hasOptionIcons and 56 or 32),
                 PaddingRight = UDim.new(0, 8),
             })
             local box = create("Frame", optionButton, {
@@ -3687,6 +3748,31 @@ function SectionMethods:Dropdown(config)
             end
             optionCheckboxes[optionIndex] = {Box = box, Stroke = stroke, Check = check}
         end
+        local image = getOptionIcon(option)
+        if image then
+            local icon = create("ImageLabel", optionButton, {
+                Name = "OptionIcon",
+                AnchorPoint = Vector2.new(0, 0.5),
+                Position = UDim2.new(0, multiSelect and 30 or 8, 0.5, 0),
+                Size = UDim2.fromOffset(18, 18),
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Image = image,
+                ImageColor3 = Color3.new(1, 1, 1),
+                ScaleType = Enum.ScaleType.Fit,
+                ZIndex = optionButton.ZIndex + 1,
+            })
+            table.insert(optionIcons, icon)
+        end
+        if hasOptionIcons then
+            if not multiSelect then
+                create("UIPadding", optionButton, {
+                    PaddingLeft = UDim.new(0, 34),
+                    PaddingRight = UDim.new(0, 8),
+                })
+            end
+            optionButton.TextTruncate = Enum.TextTruncate.AtEnd
+        end
         optionButton.MouseEnter:Connect(function() tween(optionButton, {BackgroundColor3 = theme.hover}) end)
         optionButton.MouseLeave:Connect(function() tween(optionButton, {BackgroundColor3 = theme.control}) end)
         optionButton.Activated:Connect(function()
@@ -3700,9 +3786,10 @@ function SectionMethods:Dropdown(config)
                 return
             end
             index = optionIndex
-            config.Value = option
+            local value = getOptionValue(option)
+            config.Value = value
             setOpen(false)
-            if type(config.Callback) == "function" then config.Callback(option) end
+            if type(config.Callback) == "function" then config.Callback(value) end
         end)
     end
     dropdown.Activated:Connect(function() setOpen(not open) end)
@@ -3722,14 +3809,14 @@ function SectionMethods:Dropdown(config)
     local handle = {Instance = dropdown, Menu = menu, Row = row}
     function handle:GetValue()
         if multiSelect then return getSelectedValues() end
-        return options[index]
+        return getOptionValue(options[index])
     end
     function handle:SetValue(newValue)
         if multiSelect then
             if type(newValue) ~= "table" then return nil end
             local newSelection = {}
             for _, selectedOption in ipairs(newValue) do
-                local selectedIndex = table.find(options, selectedOption)
+                local selectedIndex = findOptionIndex(selectedOption)
                 if not selectedIndex then return nil end
                 newSelection[selectedIndex] = true
             end
@@ -3739,10 +3826,10 @@ function SectionMethods:Dropdown(config)
             renderCheckboxes()
             return getSelectedValues()
         end
-        local newIndex = table.find(options, newValue)
+        local newIndex = findOptionIndex(newValue)
         if not newIndex then return nil end
         index = newIndex
-        config.Value = options[index]
+        config.Value = getOptionValue(options[index])
         renderDropdownText()
         return config.Value
     end
