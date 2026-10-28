@@ -3452,6 +3452,12 @@ function SectionMethods:Dropdown(config)
     end
 
     local multiSelect = config.MultiSelect == true
+    local optionTextInset = 0
+    if multiSelect then
+        optionTextInset = hasOptionIcons and 56 or 32
+    elseif hasOptionIcons then
+        optionTextInset = 34
+    end
     local selectedIndices = {}
     local index
     if multiSelect then
@@ -3718,13 +3724,15 @@ function SectionMethods:Dropdown(config)
         round(optionButton, 6)
         if multiSelect then
             create("UIPadding", optionButton, {
-                PaddingLeft = UDim.new(0, hasOptionIcons and 56 or 32),
+                PaddingLeft = UDim.new(0, optionTextInset),
                 PaddingRight = UDim.new(0, 8),
             })
             local box = create("Frame", optionButton, {
                 Name = "Checkbox",
                 AnchorPoint = Vector2.new(0, 0.5),
-                Position = UDim2.new(0, 8, 0.5, 0),
+                -- UIPadding also offsets absolute-positioned children. Subtract
+                -- the text inset so the checkbox stays in its own left column.
+                Position = UDim2.new(0, 8 - optionTextInset, 0.5, 0),
                 Size = UDim2.fromOffset(16, 16),
                 BackgroundColor3 = selectedIndices[optionIndex] and theme.lime or theme.card,
                 BorderSizePixel = 0,
@@ -3753,7 +3761,7 @@ function SectionMethods:Dropdown(config)
             local icon = create("ImageLabel", optionButton, {
                 Name = "OptionIcon",
                 AnchorPoint = Vector2.new(0, 0.5),
-                Position = UDim2.new(0, multiSelect and 30 or 8, 0.5, 0),
+                Position = UDim2.new(0, (multiSelect and 30 or 8) - optionTextInset, 0.5, 0),
                 Size = UDim2.fromOffset(18, 18),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
@@ -3767,7 +3775,7 @@ function SectionMethods:Dropdown(config)
         if hasOptionIcons then
             if not multiSelect then
                 create("UIPadding", optionButton, {
-                    PaddingLeft = UDim.new(0, 34),
+                    PaddingLeft = UDim.new(0, optionTextInset),
                     PaddingRight = UDim.new(0, 8),
                 })
             end
