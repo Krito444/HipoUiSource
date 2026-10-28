@@ -3393,6 +3393,9 @@ end
 
 local activeSectionDropdownCloser
 
+-- Dropdown options are text labels only (tostring + table.find); per-option images/icons
+-- are unsupported. Include identifying details, such as a crate name and ID, in the label.
+-- Icons require a custom menu or an Icon field added to the public API.
 function SectionMethods:Dropdown(config)
     config = config or {}
     assert(type(config) == "table", "Section:Dropdown expects a config table")
