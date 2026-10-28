@@ -217,6 +217,8 @@ local Mode = Options:Dropdown({
 
 Les noms de méthodes `Dropdown` et `DropDown` sont tous deux acceptés.
 
+> **Limite à connaître :** le dropdown Hipo est textuel. Il affiche les options avec `tostring` et les retrouve avec `table.find`; il ne dessine pas d’image par entrée. Pour une caisse, place donc son nom et son ID dans le libellé. Pour afficher une icône par option, il faut créer un menu personnalisé ou faire évoluer HipoUiSource pour accepter un champ `Icon` par option.
+
 ### Liste déroulante à sélection multiple
 
 Utilise `:MultiDropdown` pour ajouter une case à cocher devant chaque option. Le menu reste ouvert pendant la sélection. Le callback reçoit un tableau contenant les options cochées; `Default` accepte aussi un tableau.
